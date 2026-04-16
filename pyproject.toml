@@ -26,8 +26,8 @@ dev = [
 ]
 
 [project.scripts]
-run_ingestion = "workplace_relations_pipeline.pipeline.cli:run_ingestion"
-run_transform = "workplace_relations_pipeline.pipeline.cli:run_transform"
+run_ingestion = "workplace_relations_pipeline.services.cli:run_ingestion"
+run_transform = "workplace_relations_pipeline.services.cli:run_transform"
 
 [tool.setuptools]
 include-package-data = true

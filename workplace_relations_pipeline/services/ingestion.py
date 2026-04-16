@@ -14,8 +14,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from workplace_relations_pipeline.config.models import MetadataRecord
 from workplace_relations_pipeline.config.settings import AppSettings
 from workplace_relations_pipeline.logging_utils.json_logger import get_logger
-from workplace_relations_pipeline.pipeline.partitioning import monthly_partitions
-from workplace_relations_pipeline.pipeline.utils import build_record_key, compute_sha256, extension_from_url
+from workplace_relations_pipeline.services.partitioning import monthly_partitions
+from workplace_relations_pipeline.services.utils import build_record_key, compute_sha256, extension_from_url
 from workplace_relations_pipeline.spiders.workplace_relations_spider import WorkplaceRelationsSpider
 from workplace_relations_pipeline.storage.mongo_client import MongoRepository
 from workplace_relations_pipeline.storage.object_store import ObjectStore

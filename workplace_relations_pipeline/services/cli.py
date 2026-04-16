@@ -4,8 +4,8 @@ import argparse
 from datetime import datetime
 
 from workplace_relations_pipeline.config.settings import settings
-from workplace_relations_pipeline.pipeline.ingestion import IngestionService
-from workplace_relations_pipeline.pipeline.transformation import TransformationService
+from workplace_relations_pipeline.services.ingestion import IngestionService
+from workplace_relations_pipeline.services.transformation import TransformationService
 
 
 DEFAULT_BODIES = [

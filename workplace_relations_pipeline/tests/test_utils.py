@@ -1,4 +1,4 @@
-from workplace_relations_pipeline.pipeline.utils import build_record_key, compute_sha256
+from workplace_relations_pipeline.services.utils import build_record_key, compute_sha256
 
 
 def test_build_record_key():

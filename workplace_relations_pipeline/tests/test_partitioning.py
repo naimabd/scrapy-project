@@ -1,6 +1,6 @@
 from datetime import date
 
-from workplace_relations_pipeline.pipeline.partitioning import monthly_partitions
+from workplace_relations_pipeline.services.partitioning import monthly_partitions
 
 
 def test_monthly_partitions_basic():

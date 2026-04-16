@@ -7,9 +7,7 @@ ROBOTSTXT_OBEY = False
 RETRY_ENABLED = True
 HTTPCACHE_ENABLED = False
 
-ITEM_PIPELINES = {
-    "workplace_relations_pipeline.pipelines.WorkplaceRelationsScrapyPipeline": 300,
-}
+ITEM_PIPELINES = {}
 
 DOWNLOADER_MIDDLEWARES = {
     "workplace_relations_pipeline.middlewares.RotatingUserAgentMiddleware": 400,

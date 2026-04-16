@@ -6,7 +6,7 @@ from datetime import datetime
 from workplace_relations_pipeline.config.models import MetadataRecord
 from workplace_relations_pipeline.config.settings import AppSettings
 from workplace_relations_pipeline.logging_utils.json_logger import get_logger
-from workplace_relations_pipeline.pipeline.utils import compute_sha256
+from workplace_relations_pipeline.services.utils import compute_sha256
 from workplace_relations_pipeline.storage.mongo_client import MongoRepository
 from workplace_relations_pipeline.storage.object_store import ObjectStore
 from workplace_relations_pipeline.transform.html_cleaner import extract_relevant_html
