@@ -7,7 +7,7 @@ name = "workplace-relations-pipeline"
 version = "0.1.0"
 description = "Workplace Relations scraping and transformation pipeline"
 readme = "docs/README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
   "scrapy>=2.11.0",
   "dagster>=1.8.0",
