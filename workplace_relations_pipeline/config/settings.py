@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 
@@ -33,10 +33,10 @@ class AppSettings:
     scrapy_concurrent_requests: int = int(os.getenv("SCRAPY_CONCURRENT_REQUESTS", "4"))
     scrapy_download_delay: float = float(os.getenv("SCRAPY_DOWNLOAD_DELAY", "0.5"))
     scrapy_retry_times: int = int(os.getenv("SCRAPY_RETRY_TIMES", "4"))
-    user_agents: list[str] = os.getenv(
+    user_agents: list[str] = field(default_factory=lambda: os.getenv(
         "USER_AGENTS",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64),Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-    ).split(",")
+    ).split(","))
 
     partition_granularity: str = os.getenv("PARTITION_GRANULARITY", "monthly")
     partition_step_days: int = int(os.getenv("PARTITION_STEP_DAYS", "30"))
