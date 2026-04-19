@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dagster import AssetExecutionContext, asset
-from src.orchestrator.assets.landing_zone import landing_zone
-from src.orchestrator.partitions import MULTIPARTITIONS
-from src.orchestrator.resources import MongoResource, S3Resource
-from src.pipeline.domain.settings import settings
-from src.pipeline.infrastructure.logger import get_logger
-from src.pipeline.services.transformation_service import TransformationService
+from orchestrator.assets.landing_zone import landing_zone
+from orchestrator.partitions import MULTIPARTITIONS
+from orchestrator.resources import MongoResource, S3Resource
+from pipeline.domain.settings import settings
+from pipeline.infrastructure.logger import get_logger
+from pipeline.services.transformation_service import TransformationService
 
 
 @asset(

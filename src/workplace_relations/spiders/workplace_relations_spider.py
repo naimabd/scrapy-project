@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 import scrapy
 
 from workplace_relations.items import WorkplaceRecordItem
-from src.pipeline.services.utils import build_search_url
+from pipeline.services.utils import build_search_url
 
 class WorkplaceRelationsSpider(scrapy.Spider):
     name = "workplace_relations"

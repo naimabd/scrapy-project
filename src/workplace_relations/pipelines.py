@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import Any
 
 import requests
-from src.pipeline.domain.models import MetadataRecord
-from src.pipeline.infrastructure.mongo_repository import MongoRepository
-from src.pipeline.infrastructure.s3_repository import S3Repository
-from src.pipeline.services.utils import build_record_key, compute_sha256, extension_from_url
+from pipeline.domain.models import MetadataRecord
+from pipeline.infrastructure.mongo_repository import MongoRepository
+from pipeline.infrastructure.s3_repository import S3Repository
+from pipeline.services.utils import build_record_key, compute_sha256, extension_from_url
 
 
 class LandingZonePipeline:

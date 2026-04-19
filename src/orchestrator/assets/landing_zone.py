@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dagster import AssetExecutionContext, asset
-from src.orchestrator.partitions import MULTIPARTITIONS
-from src.orchestrator.resources import MongoResource, S3Resource
-from src.pipeline.domain.settings import settings
-from src.pipeline.infrastructure.logger import get_logger
-from src.pipeline.services.ingestion_service import IngestionService
+from orchestrator.partitions import MULTIPARTITIONS
+from orchestrator.resources import MongoResource, S3Resource
+from pipeline.domain.settings import settings
+from pipeline.infrastructure.logger import get_logger
+from pipeline.services.ingestion_service import IngestionService
 
 
 @asset(
@@ -39,7 +39,7 @@ def landing_zone(
         "S3_BUCKET_LANDING": settings.s3_bucket_landing,
     }
 
-    from src.orchestrator.partitions import BODY_MAPPING
+    from orchestrator.partitions import BODY_MAPPING
     target_body_id = BODY_MAPPING.get(target_body, "")
 
     # Run for a single day (start == end) and a single body ID

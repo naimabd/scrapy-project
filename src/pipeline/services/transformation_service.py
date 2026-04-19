@@ -5,13 +5,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from src.pipeline.domain.models import MetadataRecord
-from src.pipeline.services.html_cleaner import extract_relevant_html
-from src.pipeline.services.utils import compute_sha256
+from pipeline.domain.models import MetadataRecord
+from pipeline.services.html_cleaner import extract_relevant_html
+from pipeline.services.utils import compute_sha256
 
 if TYPE_CHECKING:
-    from src.pipeline.infrastructure.mongo_repository import MongoRepository
-    from src.pipeline.infrastructure.s3_repository import S3Repository
+    from pipeline.infrastructure.mongo_repository import MongoRepository
+    from pipeline.infrastructure.s3_repository import S3Repository
 
 
 @dataclass
