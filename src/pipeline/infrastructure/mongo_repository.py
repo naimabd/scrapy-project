@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from pymongo import ASCENDING, MongoClient
 from pymongo.collection import Collection
@@ -36,6 +36,6 @@ class MongoRepository:
 
     def find_one_by_record_key(
         self, collection_name: str, record_key: str
-    ) -> dict[str, Any] | None:
-        col = self.collection(collection_name)
+    ) -> Optional[dict[str, Any]]:
+        col = self.collection(collØection_name)
         return col.find_one({"record_key": record_key})
