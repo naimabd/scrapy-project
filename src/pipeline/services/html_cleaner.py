@@ -5,7 +5,9 @@ from bs4 import BeautifulSoup
 
 def extract_relevant_html(raw_html: bytes) -> bytes:
     soup = BeautifulSoup(raw_html, "html.parser")
-    for tag in soup.select("nav, header, footer, aside, script, style, .menu, .navbar, .breadcrumb, .footer"):
+    for tag in soup.select(
+        "nav, header, footer, aside, script, style, .menu, .navbar, .breadcrumb, .footer"
+    ):
         tag.decompose()
 
     main = soup.select_one("main") or soup.select_one("article") or soup.body or soup
