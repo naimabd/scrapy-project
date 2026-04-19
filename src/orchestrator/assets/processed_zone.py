@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dagster import AssetExecutionContext, asset
+from dagster import asset
+
 from orchestrator.assets.landing_zone import landing_zone
 from orchestrator.partitions import MULTIPARTITIONS
 from orchestrator.resources import MongoResource, S3Resource

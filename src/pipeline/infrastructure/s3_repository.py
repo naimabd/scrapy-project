@@ -31,7 +31,7 @@ class S3Repository:
             self.client.create_bucket(Bucket=bucket)
 
     def upload_bytes(
-        self, bucket: str, key: str, payload: bytes, content_type: Optional[str] = None
+        self, bucket: str, key: str, payload: bytes, content_type: str | None = None
     ) -> None:
         extra: dict[str, Any] = {"ContentType": content_type} if content_type else {}
         self.client.put_object(Bucket=bucket, Key=key, Body=payload, **extra)
@@ -49,7 +49,7 @@ class S3Repository:
             Key=target_key,
         )
 
-    def get_object_hash(self, bucket: str, key: str) -> Optional[str]:
+    def get_object_hash(self, bucket: str, key: str) -> str | None:
         """Optional: read a custom tag or metadata for the hash."""
         try:
             res = self.client.head_object(Bucket=bucket, Key=key)

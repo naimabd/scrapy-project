@@ -36,6 +36,6 @@ class MongoRepository:
 
     def find_one_by_record_key(
         self, collection_name: str, record_key: str
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         col = self.collection(collection_name)
         return col.find_one({"record_key": record_key})

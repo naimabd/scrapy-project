@@ -5,7 +5,10 @@ import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass
 
 
 @dataclass
@@ -20,7 +23,7 @@ class IngestionService:
     def __init__(
         self,
         logger: logging.Logger,
-        project_root: Optional[Path] = None,
+        project_root: Path | None = None,
     ) -> None:
         self.logger = logger
         # Default to the root of the project where scrapy.cfg lives

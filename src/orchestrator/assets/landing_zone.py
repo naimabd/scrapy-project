@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dagster import AssetExecutionContext, asset
+from dagster import asset
+
 from orchestrator.partitions import MULTIPARTITIONS
 from orchestrator.resources import MongoResource, S3Resource
 from pipeline.domain.settings import settings
@@ -18,7 +19,7 @@ def landing_zone(
     mongo: MongoResource,
     s3: S3Resource,
 ) -> None:
-    """Extracts raw data for a specific partition (date + body) and stores it in the Landing Zone."""
+    """Extracts raw data for a specific partition (date + body)."""
     # Get values from the multi-partition key
     partition_key = context.partition_key.keys_by_dimension
     target_date = partition_key["date"]

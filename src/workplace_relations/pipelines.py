@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 import requests
+
 from pipeline.domain.models import MetadataRecord
 from pipeline.infrastructure.mongo_repository import MongoRepository
 from pipeline.infrastructure.s3_repository import S3Repository

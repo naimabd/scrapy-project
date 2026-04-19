@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dagster import ConfigurableResource
+
 from pipeline.infrastructure.mongo_repository import MongoRepository
 from pipeline.infrastructure.s3_repository import S3Repository
 
