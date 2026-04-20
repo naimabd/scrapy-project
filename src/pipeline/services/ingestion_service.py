@@ -110,13 +110,27 @@ class IngestionService:
         if process.returncode != 0 and stats_missing:
             self.logger.error(f"ERROR: Scrapy exited with code {process.returncode} and produced no stats.")
 
+        def _safe_int(key: str) -> int:
+            val = raw_stats.get(key, 0)
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return 0
+
+        def _safe_float(key: str) -> float:
+            val = raw_stats.get(key, 0.0)
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return 0.0
+
         return ScrapeResult(
             returncode=process.returncode,
-            stored=raw_stats.get("landing_pipeline/stored", 0),
-            unchanged=raw_stats.get("landing_pipeline/unchanged", 0),
-            failed=raw_stats.get("landing_pipeline/failed", 0),
-            dropped=raw_stats.get("item_dropped_count", 0),
-            pages_scraped=raw_stats.get("downloader/response_count", 0),
-            elapsed_seconds=raw_stats.get("elapsed_time_seconds", 0.0),
+            stored=_safe_int("landing_pipeline/stored"),
+            unchanged=_safe_int("landing_pipeline/unchanged"),
+            failed=_safe_int("landing_pipeline/failed"),
+            dropped=_safe_int("item_dropped_count"),
+            pages_scraped=_safe_int("downloader/response_count"),
+            elapsed_seconds=_safe_float("elapsed_time_seconds"),
             raw_stats=raw_stats,
         )

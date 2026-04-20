@@ -22,10 +22,18 @@ def landing_zone(
     """Extracts raw data for a specific partition (date + body)."""
     # Get values from the multi-partition key
     partition_key = context.partition_key.keys_by_dimension
-    target_date = partition_key["date"]
     target_body = partition_key["body"]
 
-    logger = get_logger(f"landing_{target_body}_{target_date}", settings.log_level)
+    # Calculate month window bounds
+    time_window = context.partition_time_window
+    start_date = time_window.start.strftime("%Y-%m-%d")
+    
+    from datetime import timedelta
+    # Dagster partition end time is exclusive
+    end_date = (time_window.end - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # Use Dagster's native context logger so output streams directly to the UI
+    logger = context.log
     service = IngestionService(logger)
 
     # We pass the resource config as environment variables for the Scrapy subprocess
@@ -43,10 +51,10 @@ def landing_zone(
     from orchestrator.partitions import BODY_MAPPING
     target_body_id = BODY_MAPPING.get(target_body, "")
 
-    # Run for a single day (start == end) and a single body ID
+    # Run for the whole month
     result = service.run_scrape(
-        start_date=target_date,
-        end_date=target_date,
+        start_date=start_date,
+        end_date=end_date,
         bodies=[target_body_id],
         base_url=settings.source_base_url,
         user_agents=settings.user_agents,
@@ -54,17 +62,11 @@ def landing_zone(
     )
 
     if result.returncode != 0:
-        raise Exception(f"Scrapy extraction failed for {target_body} on {target_date}")
+        raise Exception(f"Scrapy extraction failed for {target_body} in month {start_date[:7]}")
 
     context.add_output_metadata(
         metadata={
-            "date": target_date,
+            "month": start_date[:7],
             "body": target_body,
-            "records_stored": result.stored,
-            "records_unchanged": result.unchanged,
-            "records_failed": result.failed,
-            "records_dropped": result.dropped,
-            "pages_scraped": result.pages_scraped,
-            "elapsed_seconds": result.elapsed_seconds,
         }
     )

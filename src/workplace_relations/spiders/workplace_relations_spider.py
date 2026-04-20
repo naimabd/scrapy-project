@@ -72,3 +72,23 @@ class WorkplaceRelationsSpider(scrapy.Spider):
                 published_date=published_date or date.today().isoformat(),
                 detail_url=source_url,
             )
+
+        # Follow next page if pagination link is present
+        next_href = response.css("a.next::attr(href)").get()
+        if next_href:
+            yield response.follow(
+                next_href,
+                callback=self.parse_search_page,
+                dont_filter=True, # Prevent Scrapy from dropping repeated search page URLs with diff parameters
+            )
+
+    def closed(self, reason):
+        import json
+        
+        stats_file = self.settings.get("STATS_EXPORT_FILE")
+        if stats_file:
+            stats = self.crawler.stats.get_stats()
+            # Convert any non-serializable objects (like datetime) to strings
+            safe_stats = {str(k): str(v) for k, v in stats.items()}
+            with open(stats_file, "w", encoding="utf-8") as f:
+                json.dump(safe_stats, f)
