@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Optional, Union
 from urllib.parse import urljoin
 
 import scrapy
@@ -18,7 +19,7 @@ class WorkplaceRelationsSpider(scrapy.Spider):
         start_date: str,
         end_date: str,
         base_url: str,
-        user_agents: str | list[str] | None = None,
+        user_agents: Optional[Union[str, list[str]]] = None,
         *args,
         **kwargs,
     ):

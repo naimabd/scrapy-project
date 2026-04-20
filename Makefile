@@ -9,17 +9,19 @@ help:
 	@echo "  format  - Run ruff format"
 
 setup:
-	pip install -e ".[dev]"
+	.venv/bin/pip install -e ".[dev]"
 
 dev:
-	dagster dev -f src/orchestrator/definitions.py
+	mkdir -p .dagster
+	.venv/bin/dagster dev -f src/orchestrator/definitions.py
 
 test:
-	pytest
+	.venv/bin/pytest
 
 lint:
-	ruff check .
-	mypy .
+	.venv/bin/ruff check src/
+	.venv/bin/mypy src/
 
 format:
-	ruff format .
+	.venv/bin/ruff format src/
+

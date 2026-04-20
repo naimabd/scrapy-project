@@ -41,11 +41,13 @@ class IngestionService:
         """Runs the Scrapy spider as a subprocess."""
         cwd = self.project_root
         
+        import sys
+        
         cmd = [
-            "scrapy", "crawl", "workplace_relations",
+            sys.executable, "-m", "scrapy", "crawl", "workplace_relations",
             "-a", f"start_date={start_date}",
             "-a", f"end_date={end_date}",
-            "-a", f"bodies={','.join(bodies)}",
+            "-a", f"body={','.join(bodies)}",
             "-a", f"base_url={base_url}",
             "-a", f"user_agents={','.join(user_agents)}",
         ]
