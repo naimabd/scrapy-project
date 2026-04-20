@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import subprocess
-from dataclasses import dataclass
+import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -14,9 +16,13 @@ if TYPE_CHECKING:
 @dataclass
 class ScrapeResult:
     returncode: int
-    found: int = 0
     stored: int = 0
+    unchanged: int = 0
     failed: int = 0
+    dropped: int = 0
+    pages_scraped: int = 0
+    elapsed_seconds: float = 0.0
+    raw_stats: dict = field(default_factory=dict)
 
 
 class IngestionService:
@@ -43,6 +49,10 @@ class IngestionService:
         
         import sys
         
+        # Temp file for Scrapy to write stats into after spider closes
+        stats_fd, stats_path = tempfile.mkstemp(suffix=".json", prefix="scrapy_stats_")
+        os.close(stats_fd)
+
         cmd = [
             sys.executable, "-m", "scrapy", "crawl", "workplace_relations",
             "-a", f"start_date={start_date}",
@@ -50,10 +60,10 @@ class IngestionService:
             "-a", f"body={','.join(bodies)}",
             "-a", f"base_url={base_url}",
             "-a", f"user_agents={','.join(user_agents)}",
+            "-s", f"STATS_EXPORT_FILE={stats_path}",
         ]
 
         # Inject project root and src dir to PYTHONPATH
-        # This allows finding 'src.pipeline' and 'workplace_relations' (which is in src)
         src_dir = str(cwd / "src")
         env = os.environ.copy()
         env.update(env_vars)
@@ -65,18 +75,48 @@ class IngestionService:
         env["PYTHONPATH"] = ":".join(python_path)
 
         self.logger.info(f"Starting Scrapy subprocess in {cwd}")
+        
         process = subprocess.run(
             cmd,
             cwd=cwd,
             env=env,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             check=False
         )
 
+        # Forward every line from the spider subprocess to our logger
         if process.stdout:
-            self.logger.debug(process.stdout)
-        if process.stderr:
-            self.logger.error(process.stderr)
+            for line in process.stdout.splitlines():
+                self.logger.info(line)
 
-        return ScrapeResult(returncode=process.returncode)
+        raw_stats: dict = {}
+        stats_missing = False
+        try:
+            with open(stats_path, encoding="utf-8") as fh:
+                raw_stats = json.load(fh)
+        except FileNotFoundError:
+            stats_missing = True
+            self.logger.error("WARNING: Scrapy stats file not found \u2014 spider may have crashed before writing stats.")
+        except json.JSONDecodeError as exc:
+            self.logger.error(f"WARNING: Could not parse Scrapy stats file: {exc}")
+        finally:
+            try:
+                os.unlink(stats_path)
+            except OSError:
+                pass
+
+        if process.returncode != 0 and stats_missing:
+            self.logger.error(f"ERROR: Scrapy exited with code {process.returncode} and produced no stats.")
+
+        return ScrapeResult(
+            returncode=process.returncode,
+            stored=raw_stats.get("landing_pipeline/stored", 0),
+            unchanged=raw_stats.get("landing_pipeline/unchanged", 0),
+            failed=raw_stats.get("landing_pipeline/failed", 0),
+            dropped=raw_stats.get("item_dropped_count", 0),
+            pages_scraped=raw_stats.get("downloader/response_count", 0),
+            elapsed_seconds=raw_stats.get("elapsed_time_seconds", 0.0),
+            raw_stats=raw_stats,
+        )

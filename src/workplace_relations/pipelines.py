@@ -61,11 +61,16 @@ class LandingZonePipeline:
 
         existing = self.mongo.find_one_by_record_key(self.mongo_col, record_key)
         if existing and existing.get("file_hash") == file_hash:
+            spider.crawler.stats.inc_value("landing_pipeline/unchanged")
             return item
 
-        self.store.upload_bytes(
-            self.s3_bucket, key, payload, content_type=resp.headers.get("Content-Type")
-        )
+        try:
+            self.store.upload_bytes(
+                self.s3_bucket, key, payload, content_type=resp.headers.get("Content-Type")
+            )
+        except Exception as e:
+            spider.crawler.stats.inc_value("landing_pipeline/failed")
+            raise e
 
         record = MetadataRecord(
             source_body=item["source_body"],
@@ -85,4 +90,10 @@ class LandingZonePipeline:
         )
 
         self.mongo.upsert_by_record_key(self.mongo_col, record.to_dict())
+        spider.crawler.stats.inc_value("landing_pipeline/stored")
+        
         return item
+    
+    def handle_error(self, failure, item, spider):
+        spider.crawler.stats.inc_value("landing_pipeline/failed")
+        return failure

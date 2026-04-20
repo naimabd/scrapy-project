@@ -60,5 +60,11 @@ def landing_zone(
         metadata={
             "date": target_date,
             "body": target_body,
+            "records_stored": result.stored,
+            "records_unchanged": result.unchanged,
+            "records_failed": result.failed,
+            "records_dropped": result.dropped,
+            "pages_scraped": result.pages_scraped,
+            "elapsed_seconds": result.elapsed_seconds,
         }
     )
