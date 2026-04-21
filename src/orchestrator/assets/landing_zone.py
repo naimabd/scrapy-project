@@ -59,6 +59,7 @@ def landing_zone(
         base_url=settings.source_base_url,
         user_agents=settings.user_agents,
         env_vars=env_vars,
+        partition_date=start_date[:7],  # YYYY-MM
     )
 
     if result.returncode != 0:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Union
 from urllib.parse import urljoin
 
@@ -19,6 +19,7 @@ class WorkplaceRelationsSpider(scrapy.Spider):
         start_date: str,
         end_date: str,
         base_url: str,
+        partition_date: Optional[str] = None,
         user_agents: Optional[Union[str, list[str]]] = None,
         *args,
         **kwargs,
@@ -28,6 +29,7 @@ class WorkplaceRelationsSpider(scrapy.Spider):
         self.start_date = start_date
         self.end_date = end_date
         self.base_url = base_url
+        self.partition_date = partition_date or date.today().strftime("%Y-%m")
         if isinstance(user_agents, str):
             self.user_agents = [ua.strip() for ua in user_agents.split(",") if ua.strip()]
         else:
@@ -48,14 +50,27 @@ class WorkplaceRelationsSpider(scrapy.Spider):
         )
 
     def parse_search_page(self, response: scrapy.http.Response):
-        rows = response.css(".search-results .result-item")
+        rows = response.css("li.each-item.clearfix")
         for row in rows:
-            detail_link = row.css("a::attr(href)").get()
-            title = (row.css("a::text").get() or "").strip()
-            description = (row.css(".description::text").get() or "").strip()
-            published_date = (row.css(".date::text").get() or "").strip()
+            # Try to get the detail link from the 'View Page' button first, then the title
+            detail_link = row.css("a.btn.btn-primary::attr(href)").get(
+                default=row.css("h2.title a::attr(href)").get(default="")
+            )
+            title = (row.css("h2.title a::text").get() or "").strip()
+            description = (row.css("p.description::text").get() or "").strip()
+            raw_date = (row.css("span.date::text").get() or "").strip()
+            
+            # Normalize date from DD/MM/YYYY to YYYY-MM-DD
+            published_date = raw_date
+            try:
+                if raw_date:
+                    dt = datetime.strptime(raw_date, "%d/%m/%Y")
+                    published_date = dt.strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
             identifier = (
-                row.css(".identifier::text").get()
+                row.css("span.refNO::text").get()
                 or (
                     detail_link.rstrip("/").split("/")[-1]
                     if detail_link
@@ -63,7 +78,8 @@ class WorkplaceRelationsSpider(scrapy.Spider):
                 )
             )
             source_url = urljoin(response.url, detail_link) if detail_link else response.url
-            yield WorkplaceRecordItem(
+            
+            item = WorkplaceRecordItem(
                 source_body=self.body,
                 source_url=source_url,
                 identifier=identifier,
@@ -73,14 +89,40 @@ class WorkplaceRelationsSpider(scrapy.Spider):
                 detail_url=source_url,
             )
 
+            # Follow the detail link to get the actual content
+            yield response.follow(
+                source_url,
+                callback=self.parse_detail_page,
+                meta={"item": item},
+            )
+
         # Follow next page if pagination link is present
         next_href = response.css("a.next::attr(href)").get()
         if next_href:
             yield response.follow(
                 next_href,
                 callback=self.parse_search_page,
-                dont_filter=True, # Prevent Scrapy from dropping repeated search page URLs with diff parameters
+                dont_filter=True,
             )
+
+    def parse_detail_page(self, response: scrapy.http.Response):
+        item = response.meta["item"]
+        
+        # Determine content type
+        content_type = response.headers.get("Content-Type", b"").decode("utf-8").lower()
+        
+        if "application/pdf" in content_type or response.url.lower().endswith(".pdf"):
+            item["content_bytes"] = response.body
+            item["file_type"] = "pdf"
+        elif "msword" in content_type or response.url.lower().endswith((".doc", ".docx")):
+            item["content_bytes"] = response.body
+            item["file_type"] = response.url.lower().split(".")[-1]
+        else:
+            # Assume HTML
+            item["content_bytes"] = response.body
+            item["file_type"] = "html"
+            
+        yield item
 
     def closed(self, reason):
         import json

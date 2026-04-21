@@ -43,6 +43,7 @@ class IngestionService:
         base_url: str,
         user_agents: list[str],
         env_vars: dict[str, str],
+        partition_date: str | None = None,
     ) -> ScrapeResult:
         """Runs the Scrapy spider as a subprocess."""
         cwd = self.project_root
@@ -62,6 +63,9 @@ class IngestionService:
             "-a", f"user_agents={','.join(user_agents)}",
             "-s", f"STATS_EXPORT_FILE={stats_path}",
         ]
+        
+        if partition_date:
+            cmd.extend(["-a", f"partition_date={partition_date}"])
 
         # Inject project root and src dir to PYTHONPATH
         src_dir = str(cwd / "src")

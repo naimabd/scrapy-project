@@ -19,7 +19,9 @@ class AppSettings(BaseSettings):
         return v
 
     # MongoDB Settings
-    mongo_uri: str = Field(default="mongodb://admin:admin@localhost:27017", alias="MONGO_URI")
+    mongo_uri: str = Field(
+        default="mongodb://admin:admin@127.0.0.1:27017/?directConnection=true", alias="MONGO_URI"
+    )
     mongo_db: str = Field(default="workplace_relations_pipeline", alias="MONGO_DB")
     mongo_collection_landing: str = Field(
         default="landing_metadata", alias="MONGO_COLLECTION_LANDING"
@@ -39,7 +41,7 @@ class AppSettings(BaseSettings):
 
     # Scrapy Settings
     source_base_url: str = Field(
-        default="https://www.workplacerelations.ie/en/search/?advance=true", alias="SOURCE_BASE_URL"
+        default="https://www.workplacerelations.ie/en/search/", alias="SOURCE_BASE_URL"
     )
     scrapy_concurrent_requests: int = Field(default=4, alias="SCRAPY_CONCURRENT_REQUESTS")
     scrapy_download_delay: float = Field(default=0.5, alias="SCRAPY_DOWNLOAD_DELAY")

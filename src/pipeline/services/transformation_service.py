@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 
 import logging
 from dataclasses import dataclass
@@ -40,12 +41,24 @@ class TransformationService:
         source_collection: str,
         target_collection: str,
         target_bucket: str,
+        partition_date: str | None = None,
+        source_body: str | None = None,
     ) -> TransformSummary:
         summary = TransformSummary()
         self.mongo.ensure_indexes(target_collection)
         self.store.ensure_bucket(target_bucket)
 
-        cursor = self.mongo.find_by_date_range(source_collection, start_date, end_date)
+        query: dict[str, Any] = {}
+        if partition_date:
+            query["partition_date"] = partition_date
+        
+        if source_body:
+            query["source_body"] = source_body
+
+        if query:
+            cursor = self.mongo.collection(source_collection).find(query)
+        else:
+            cursor = self.mongo.find_by_date_range(source_collection, start_date, end_date)
 
         for doc in cursor:
             summary.processed += 1

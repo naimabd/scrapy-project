@@ -46,16 +46,22 @@ class LandingZonePipeline:
         self.mongo.ensure_indexes(self.mongo_col)
         self.store.ensure_bucket(self.s3_bucket)
 
+    def close_spider(self, spider: Any) -> None:
+        self.mongo.close()
+
     def process_item(self, item: Any, spider: Any) -> Any:
         url = item["detail_url"]
-        ext = extension_from_url(url)
-        resp = requests.get(url, timeout=30)
-        resp.raise_for_status()
-        payload = resp.content
+        payload = item.get("content_bytes")
+        ext = "." + item.get("file_type", "html")
+        
+        if not payload:
+            spider.logger.warning(f"No content for {url}")
+            return item
+            
         file_hash = compute_sha256(payload)
 
-        # Simple monthly label for partition
-        partition_label = datetime.utcnow().strftime("%Y-%m")
+        # Use partition label from spider (supporting historical backfills)
+        partition_label = getattr(spider, "partition_date", datetime.utcnow().strftime("%Y-%m"))
         key = f"landing/{partition_label}/{item['identifier']}{ext}"
         record_key = build_record_key(item["source_body"], item["identifier"], partition_label)
 
@@ -66,7 +72,7 @@ class LandingZonePipeline:
 
         try:
             self.store.upload_bytes(
-                self.s3_bucket, key, payload, content_type=resp.headers.get("Content-Type")
+                self.s3_bucket, key, payload
             )
         except Exception as e:
             spider.crawler.stats.inc_value("landing_pipeline/failed")

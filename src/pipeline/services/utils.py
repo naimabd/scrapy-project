@@ -38,7 +38,12 @@ def build_search_url(
     Constructs a search URL with filtered, formatted parameters.
     Dates are converted from YYYY-MM-DD to D/M/YYYY.
     """
-    params = {"decisions": decisions}
+    parsed = urlparse(base_url)
+    from urllib.parse import parse_qs
+    params = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+    
+    # Merge defaults and overrides
+    params.update({"decisions": decisions})
 
     # Handle date formatting if present
     if from_date:
@@ -57,7 +62,6 @@ def build_search_url(
     filtered_params = {k: v for k, v in params.items() if v is not None and v != ""}
 
     # Construct the final URL
-    clean_base = base_url.split("?")[0]
     query_string = urlencode(filtered_params, safe="/")
     
-    return f"{clean_base}?{query_string}"
+    return f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{query_string}"

@@ -8,8 +8,11 @@ from pymongo.collection import Collection
 
 class MongoRepository:
     def __init__(self, uri: str, db_name: str) -> None:
-        self.client: MongoClient[dict[str, Any]] = MongoClient(uri)
+        self.client: MongoClient[dict[str, Any]] = MongoClient(uri, connect=False)
         self.db = self.client[db_name]
+
+    def close(self) -> None:
+        self.client.close()
 
     def collection(self, name: str) -> Collection[dict[str, Any]]:
         return self.db[name]

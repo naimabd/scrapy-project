@@ -33,14 +33,18 @@ def processed_zone(
 
     service = TransformationService(mongo_client, s3_client, logger)
 
-    # Transform data specifically for this one date
-    summary = service.run(
-        start_date=target_date,
-        end_date=target_date,
-        source_collection=settings.mongo_collection_landing,
-        target_collection=settings.mongo_collection_transformed,
-        target_bucket=settings.s3_bucket_transformed,
-    )
+    # Transform data specifically for this one partition
+    try:
+        summary = service.run(
+            start_date=target_date,
+            end_date=target_date,
+            source_collection=settings.mongo_collection_landing,
+            target_collection=settings.mongo_collection_transformed,
+            target_bucket=settings.s3_bucket_transformed,
+            partition_date=target_date[:7], # YYYY-MM
+        )
+    finally:
+        mongo_client.close()
 
     context.add_output_metadata(
         metadata={

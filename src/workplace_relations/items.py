@@ -9,3 +9,5 @@ class WorkplaceRecordItem(scrapy.Item):
     description = scrapy.Field()
     published_date = scrapy.Field()
     detail_url = scrapy.Field()
+    content_bytes = scrapy.Field()
+    file_type = scrapy.Field()
