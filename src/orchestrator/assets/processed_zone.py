@@ -25,15 +25,16 @@ def processed_zone(
     # Get values from the multi-partition key
     partition_key = context.partition_key.keys_by_dimension
     target_date = partition_key["date"]
+    target_body = partition_key["body"]
     
-    logger = get_logger(f"processed_{target_date}", settings.log_level)
+    logger = get_logger(f"processed_{target_body}_{target_date}", settings.log_level)
 
     mongo_client = mongo.get_client()
     s3_client = s3.get_client()
 
     service = TransformationService(mongo_client, s3_client, logger)
 
-    # Transform data specifically for this one partition
+    # Transform data specifically for this one partition (Body + Date)
     try:
         summary = service.run(
             start_date=target_date,
@@ -42,6 +43,7 @@ def processed_zone(
             target_collection=settings.mongo_collection_transformed,
             target_bucket=settings.s3_bucket_transformed,
             partition_date=target_date[:7], # YYYY-MM
+            source_body=target_body,
         )
     finally:
         mongo_client.close()
