@@ -6,7 +6,7 @@ from pipeline.infrastructure.mongo_repository import MongoRepository
 from pipeline.infrastructure.s3_repository import S3Repository
 
 
-class MongoResource(ConfigurableResource):
+class MongoResource(ConfigurableResource):  # type: ignore[type-arg]
     uri: str
     db_name: str
 
@@ -14,7 +14,7 @@ class MongoResource(ConfigurableResource):
         return MongoRepository(self.uri, self.db_name)
 
 
-class S3Resource(ConfigurableResource):
+class S3Resource(ConfigurableResource):  # type: ignore[type-arg]
     endpoint_url: str
     access_key: str
     secret_key: str

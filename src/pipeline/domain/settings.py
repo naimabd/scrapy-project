@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class AppSettings(BaseSettings):
@@ -46,7 +46,7 @@ class AppSettings(BaseSettings):
     scrapy_concurrent_requests: int = Field(default=4, alias="SCRAPY_CONCURRENT_REQUESTS")
     scrapy_download_delay: float = Field(default=0.5, alias="SCRAPY_DOWNLOAD_DELAY")
     scrapy_retry_times: int = Field(default=4, alias="SCRAPY_RETRY_TIMES")
-    user_agents: Any = Field(
+    user_agents: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",

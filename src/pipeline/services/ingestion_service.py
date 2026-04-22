@@ -22,7 +22,7 @@ class ScrapeResult:
     dropped: int = 0
     pages_scraped: int = 0
     elapsed_seconds: float = 0.0
-    raw_stats: dict = field(default_factory=dict)
+    raw_stats: dict[str, object] = field(default_factory=dict)
 
 
 class IngestionService:
@@ -95,14 +95,17 @@ class IngestionService:
             for line in process.stdout.splitlines():
                 self.logger.info(line)
 
-        raw_stats: dict = {}
+        raw_stats: dict[str, object] = {}
         stats_missing = False
         try:
             with open(stats_path, encoding="utf-8") as fh:
                 raw_stats = json.load(fh)
         except FileNotFoundError:
             stats_missing = True
-            self.logger.error("WARNING: Scrapy stats file not found \u2014 spider may have crashed before writing stats.")
+            self.logger.error(
+                "WARNING: Scrapy stats file not found \u2014 "
+                "spider may have crashed before writing stats."
+            )
         except json.JSONDecodeError as exc:
             self.logger.error(f"WARNING: Could not parse Scrapy stats file: {exc}")
         finally:
@@ -112,10 +115,15 @@ class IngestionService:
                 pass
 
         if process.returncode != 0 and stats_missing:
-            self.logger.error(f"ERROR: Scrapy exited with code {process.returncode} and produced no stats.")
+            self.logger.error(
+                f"ERROR: Scrapy exited with code {process.returncode} "
+                "and produced no stats."
+            )
 
         def _safe_int(key: str) -> int:
             val = raw_stats.get(key, 0)
+            if not isinstance(val, (str, int, float, bytes, bytearray)):
+                return 0
             try:
                 return int(val)
             except (ValueError, TypeError):
@@ -123,6 +131,8 @@ class IngestionService:
 
         def _safe_float(key: str) -> float:
             val = raw_stats.get(key, 0.0)
+            if not isinstance(val, (str, int, float, bytes, bytearray)):
+                return 0.0
             try:
                 return float(val)
             except (ValueError, TypeError):

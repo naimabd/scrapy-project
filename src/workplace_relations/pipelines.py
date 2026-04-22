@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 
-import requests
+from scrapy import Spider
+from scrapy.crawler import Crawler
+from twisted.python.failure import Failure
 
 from pipeline.domain.models import MetadataRecord
 from pipeline.infrastructure.mongo_repository import MongoRepository
 from pipeline.infrastructure.s3_repository import S3Repository
-from pipeline.services.utils import build_record_key, compute_sha256, extension_from_url
+from pipeline.services.utils import build_record_key, compute_sha256
+from workplace_relations.items import WorkplaceRecordItem
 
 
 class LandingZonePipeline:
@@ -29,7 +31,7 @@ class LandingZonePipeline:
         self.s3_bucket = s3_bucket
 
     @classmethod
-    def from_crawler(cls, crawler: Any) -> LandingZonePipeline:
+    def from_crawler(cls, crawler: Crawler) -> LandingZonePipeline:
         settings = crawler.settings
         return cls(
             mongo_uri=settings.get("MONGO_URI"),
@@ -42,14 +44,14 @@ class LandingZonePipeline:
             s3_bucket=settings.get("S3_BUCKET_LANDING"),
         )
 
-    def open_spider(self, spider: Any) -> None:
+    def open_spider(self, spider: Spider) -> None:
         self.mongo.ensure_indexes(self.mongo_col)
         self.store.ensure_bucket(self.s3_bucket)
 
-    def close_spider(self, spider: Any) -> None:
+    def close_spider(self, spider: Spider) -> None:
         self.mongo.close()
 
-    def process_item(self, item: Any, spider: Any) -> Any:
+    def process_item(self, item: WorkplaceRecordItem, spider: Spider) -> WorkplaceRecordItem:
         url = item["detail_url"]
         payload = item.get("content_bytes")
         ext = "." + item.get("file_type", "html")
@@ -67,7 +69,8 @@ class LandingZonePipeline:
 
         existing = self.mongo.find_one_by_record_key(self.mongo_col, record_key)
         if existing and existing.get("file_hash") == file_hash:
-            spider.crawler.stats.inc_value("landing_pipeline/unchanged")
+            if spider.crawler.stats:
+                spider.crawler.stats.inc_value("landing_pipeline/unchanged")
             return item
 
         try:
@@ -75,7 +78,8 @@ class LandingZonePipeline:
                 self.s3_bucket, key, payload
             )
         except Exception as e:
-            spider.crawler.stats.inc_value("landing_pipeline/failed")
+            if spider.crawler.stats:
+                spider.crawler.stats.inc_value("landing_pipeline/failed")
             raise e
 
         record = MetadataRecord(
@@ -96,10 +100,14 @@ class LandingZonePipeline:
         )
 
         self.mongo.upsert_by_record_key(self.mongo_col, record.to_dict())
-        spider.crawler.stats.inc_value("landing_pipeline/stored")
+        if spider.crawler.stats:
+            spider.crawler.stats.inc_value("landing_pipeline/stored")
         
         return item
     
-    def handle_error(self, failure, item, spider):
-        spider.crawler.stats.inc_value("landing_pipeline/failed")
+    def handle_error(
+        self, failure: Failure, item: WorkplaceRecordItem, spider: Spider
+    ) -> Failure:
+        if spider.crawler.stats:
+            spider.crawler.stats.inc_value("landing_pipeline/failed")
         return failure

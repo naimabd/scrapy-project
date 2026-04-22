@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Any
 
 import logging
 from dataclasses import dataclass
@@ -48,7 +47,7 @@ class TransformationService:
         self.mongo.ensure_indexes(target_collection)
         self.store.ensure_bucket(target_bucket)
 
-        query: dict[str, Any] = {}
+        query: dict[str, str] = {}
         if partition_date:
             query["partition_date"] = partition_date
         
@@ -60,14 +59,34 @@ class TransformationService:
         else:
             cursor = self.mongo.find_by_date_range(source_collection, start_date, end_date)
 
+        def _as_str(value: object, default: str = "") -> str:
+            return value if isinstance(value, str) else default
+
+        def _as_optional_str(value: object) -> str | None:
+            return value if isinstance(value, str) else None
+
         for doc in cursor:
             summary.processed += 1
             try:
-                file_bytes = self.store.download_bytes(
-                    doc["storage_bucket"], doc["storage_key"]
-                )
-                ext = "." + doc.get("file_type", "html").lower()
-                target_key = f"transformed/{doc['partition_date']}/{doc['identifier']}{ext}"
+                storage_bucket = _as_str(doc.get("storage_bucket"))
+                storage_key = _as_str(doc.get("storage_key"))
+                identifier = _as_str(doc.get("identifier"))
+                doc_partition_date = _as_str(doc.get("partition_date"))
+                record_key = _as_str(doc.get("record_key"))
+                file_type = _as_str(doc.get("file_type"), "html")
+
+                if not (
+                    storage_bucket
+                    and storage_key
+                    and identifier
+                    and doc_partition_date
+                    and record_key
+                ):
+                    raise ValueError("Missing required document fields for transformation")
+
+                file_bytes = self.store.download_bytes(storage_bucket, storage_key)
+                ext = "." + file_type.lower()
+                target_key = f"transformed/{doc_partition_date}/{identifier}{ext}"
 
                 if ext in {".html", ".htm"}:
                     payload = extract_relevant_html(file_bytes)
@@ -78,7 +97,7 @@ class TransformationService:
 
                 new_hash = compute_sha256(payload)
                 existing = self.mongo.find_one_by_record_key(
-                    target_collection, doc["record_key"]
+                    target_collection, record_key
                 )
 
                 if existing and existing.get("file_hash") == new_hash:
@@ -92,23 +111,23 @@ class TransformationService:
                 )
 
                 transformed = MetadataRecord(
-                    source_body=doc["source_body"],
-                    source_url=doc["source_url"],
-                    identifier=doc["identifier"],
-                    title=doc.get("title", ""),
-                    description=doc.get("description", ""),
-                    published_date=doc.get("published_date", ""),
-                    partition_date=doc["partition_date"],
-                    file_type=doc.get("file_type", "html"),
+                    source_body=_as_str(doc.get("source_body")),
+                    source_url=_as_str(doc.get("source_url")),
+                    identifier=identifier,
+                    title=_as_str(doc.get("title")),
+                    description=_as_str(doc.get("description")),
+                    published_date=_as_str(doc.get("published_date")),
+                    partition_date=doc_partition_date,
+                    file_type=file_type,
                     storage_bucket=target_bucket,
                     storage_key=target_key,
                     file_hash=new_hash,
-                    ingested_at=doc.get("ingested_at"),
+                    ingested_at=_as_optional_str(doc.get("ingested_at")),
                     transformed_at=datetime.utcnow().isoformat(),
                     status="ok",
-                    source_identifier=doc.get("identifier"),
-                    landing_storage_key=doc.get("storage_key"),
-                    record_key=doc["record_key"]
+                    source_identifier=identifier,
+                    landing_storage_key=storage_key,
+                    record_key=record_key,
                 )
                 self.mongo.upsert_by_record_key(target_collection, transformed.to_dict())
             except Exception as exc:

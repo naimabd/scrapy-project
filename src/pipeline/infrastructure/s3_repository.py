@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import cast
 
-import boto3
-import botocore
+import boto3  # type: ignore[import-untyped]
+from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 
 class S3Repository:
@@ -27,13 +27,13 @@ class S3Repository:
     def ensure_bucket(self, bucket: str) -> None:
         try:
             self.client.head_bucket(Bucket=bucket)
-        except botocore.exceptions.ClientError:
+        except ClientError:
             self.client.create_bucket(Bucket=bucket)
 
     def upload_bytes(
-        self, bucket: str, key: str, payload: bytes, content_type: Optional[str] = None
+        self, bucket: str, key: str, payload: bytes, content_type: str | None = None
     ) -> None:
-        extra: dict[str, Any] = {"ContentType": content_type} if content_type else {}
+        extra: dict[str, str] = {"ContentType": content_type} if content_type else {}
         self.client.put_object(Bucket=bucket, Key=key, Body=payload, **extra)
 
     def download_bytes(self, bucket: str, key: str) -> bytes:
@@ -49,10 +49,11 @@ class S3Repository:
             Key=target_key,
         )
 
-    def get_object_hash(self, bucket: str, key: str) -> Optional[str]:
+    def get_object_hash(self, bucket: str, key: str) -> str | None:
         """Optional: read a custom tag or metadata for the hash."""
         try:
             res = self.client.head_object(Bucket=bucket, Key=key)
-            return res.get("Metadata", {}).get("file-hash")
-        except botocore.exceptions.ClientError:
+            metadata = cast(dict[str, str], res.get("Metadata", {}))
+            return metadata.get("file-hash")
+        except ClientError:
             return None

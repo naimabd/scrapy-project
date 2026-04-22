@@ -3,12 +3,11 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Any
 
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
-        payload: dict[str, Any] = {
+        payload: dict[str, object] = {
             "timestamp": datetime.utcnow().isoformat(),
             "level": record.levelname,
             "message": record.getMessage(),

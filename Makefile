@@ -24,4 +24,3 @@ lint:
 
 format:
 	.venv/bin/ruff format src/
-

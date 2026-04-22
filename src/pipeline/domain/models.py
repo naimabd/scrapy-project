@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -20,15 +20,15 @@ class MetadataRecord(BaseModel):
     storage_bucket: str
     storage_key: str
     file_hash: str
-    ingested_at: Optional[str] = None
-    transformed_at: Optional[str] = None
+    ingested_at: Optional[str] = None  # noqa: UP045
+    transformed_at: Optional[str] = None  # noqa: UP045
     status: str = "ok"
-    error_reason: Optional[str] = None
-    source_identifier: Optional[str] = None
-    landing_storage_key: Optional[str] = None
-    record_key: Optional[str] = None
+    error_reason: Optional[str] = None  # noqa: UP045
+    source_identifier: Optional[str] = None  # noqa: UP045
+    landing_storage_key: Optional[str] = None  # noqa: UP045
+    record_key: Optional[str] = None  # noqa: UP045
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, object]:
         data = self.model_dump()
         if not self.ingested_at:
             data["ingested_at"] = datetime.utcnow().isoformat()

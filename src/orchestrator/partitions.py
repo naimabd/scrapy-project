@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from dagster import MonthlyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
+from dagster import (
+    MonthlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 
 # Mapping of Legal Body names to their numerical IDs in the URL parameters
 BODY_MAPPING = {

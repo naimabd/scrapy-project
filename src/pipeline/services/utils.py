@@ -13,26 +13,13 @@ def build_record_key(source_body: str, identifier: str, partition_date: str) -> 
     return f"{source_body}|{identifier}|{partition_date}"
 
 
-def extension_from_url(url: str, default: str = ".html") -> str:
-    path = urlparse(url).path.lower()
-    if ".pdf" in path:
-        return ".pdf"
-    if ".docx" in path:
-        return ".docx"
-    if ".doc" in path:
-        return ".doc"
-    if ".htm" in path or ".html" in path:
-        return ".html"
-    return default
-
-
 def build_search_url(
     base_url: str,
     from_date: str | None = None,
     to_date: str | None = None,
     body: str | None = None,
     decisions: str = "1",
-    **extra_params,
+    **extra_params: str,
 ) -> str:
     """
     Constructs a search URL with filtered, formatted parameters.

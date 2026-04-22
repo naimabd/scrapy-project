@@ -1,11 +1,8 @@
-from __future__ import annotations
-
-from dagster import asset
+from dagster import AssetExecutionContext, asset
 
 from orchestrator.partitions import MULTIPARTITIONS
 from orchestrator.resources import MongoResource, S3Resource
 from pipeline.domain.settings import settings
-from pipeline.infrastructure.logger import get_logger
 from pipeline.services.ingestion_service import IngestionService
 
 
@@ -15,7 +12,7 @@ from pipeline.services.ingestion_service import IngestionService
     partitions_def=MULTIPARTITIONS,
 )
 def landing_zone(
-    context,
+    context: AssetExecutionContext,
     mongo: MongoResource,
     s3: S3Resource,
 ) -> None:

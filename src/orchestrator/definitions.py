@@ -10,21 +10,21 @@ all_assets = load_assets_from_modules([landing_zone, processed_zone])
 # Job for just scraping
 ingestion_job = define_asset_job(
     name="ingestion_job",
-    selection=AssetSelection.assets(landing_zone),
+    selection=AssetSelection.groups("landing"),
     description="Run only the Scrapy ingestion phase.",
 )
 
 # Job for just transformation (requires existing landing data)
 transformation_job = define_asset_job(
     name="transformation_job",
-    selection=AssetSelection.assets(processed_zone),
+    selection=AssetSelection.groups("processed"),
     description="Run only the BeautifulSoup transformation phase.",
 )
 
 # Job for the full end-to-end pipeline
 full_pipeline_job = define_asset_job(
     name="full_pipeline_job",
-    selection=AssetSelection.all(),
+    selection=AssetSelection.groups("landing", "processed"),
     description="Run the full scrape and transform pipeline.",
 )
 

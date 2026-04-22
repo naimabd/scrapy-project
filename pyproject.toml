@@ -2,7 +2,7 @@
 name = "workplace-relations-pipeline"
 version = "0.1.0"
 description = "Modern Workplace Relations scraping and transformation pipeline"
-readme = "docs/README.md"
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
   "scrapy>=2.11.0",

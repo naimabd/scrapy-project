@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from dagster import asset
+from dagster import AssetExecutionContext, asset
 
 from orchestrator.assets.landing_zone import landing_zone
 from orchestrator.partitions import MULTIPARTITIONS
@@ -17,7 +15,7 @@ from pipeline.services.transformation_service import TransformationService
     partitions_def=MULTIPARTITIONS,
 )
 def processed_zone(
-    context,
+    context: AssetExecutionContext,
     mongo: MongoResource,
     s3: S3Resource,
 ) -> None:

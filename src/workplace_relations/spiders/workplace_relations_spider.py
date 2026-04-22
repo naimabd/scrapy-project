@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import date, datetime
-from typing import Optional, Union
 from urllib.parse import urljoin
 
 import scrapy
+from scrapy import Request
+from scrapy.http import Response
 
 from pipeline.services.utils import build_search_url
 from workplace_relations.items import WorkplaceRecordItem
@@ -12,6 +14,7 @@ from workplace_relations.items import WorkplaceRecordItem
 
 class WorkplaceRelationsSpider(scrapy.Spider):
     name = "workplace_relations"
+    allowed_domains = ["www.workplacerelations.ie"]
 
     def __init__(
         self,
@@ -19,12 +22,11 @@ class WorkplaceRelationsSpider(scrapy.Spider):
         start_date: str,
         end_date: str,
         base_url: str,
-        partition_date: Optional[str] = None,
-        user_agents: Optional[Union[str, list[str]]] = None,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(*args, **kwargs)
+        partition_date: str | None = None,
+        user_agents: str | list[str] | None = None,
+        **kwargs: str | None,
+    ) -> None:
+        super().__init__(**kwargs)
         self.body = body
         self.start_date = start_date
         self.end_date = end_date
@@ -35,7 +37,7 @@ class WorkplaceRelationsSpider(scrapy.Spider):
         else:
             self.user_agents = user_agents or []
 
-    def start_requests(self):
+    def start_requests(self) -> Generator[Request, None, None]:
 
         url = build_search_url(
             base_url=self.base_url,
@@ -49,7 +51,9 @@ class WorkplaceRelationsSpider(scrapy.Spider):
             dont_filter=True,
         )
 
-    def parse_search_page(self, response: scrapy.http.Response):
+    def parse_search_page(
+        self, response: Response
+    ) -> Generator[Request, None, None]:
         rows = response.css("li.each-item.clearfix")
         for row in rows:
             # Try to get the detail link from the 'View Page' button first, then the title
@@ -105,11 +109,17 @@ class WorkplaceRelationsSpider(scrapy.Spider):
                 dont_filter=True,
             )
 
-    def parse_detail_page(self, response: scrapy.http.Response):
+    def parse_detail_page(
+        self, response: Response
+    ) -> Generator[WorkplaceRecordItem, None, None]:
         item = response.meta["item"]
         
         # Determine content type
-        content_type = response.headers.get("Content-Type", b"").decode("utf-8").lower()
+        raw_content_type = response.headers.get("Content-Type")
+        if raw_content_type is None:
+            content_type = ""
+        else:
+            content_type = bytes(raw_content_type).decode("utf-8", errors="ignore").lower()
         
         if "application/pdf" in content_type or response.url.lower().endswith(".pdf"):
             item["content_bytes"] = response.body
@@ -124,12 +134,13 @@ class WorkplaceRelationsSpider(scrapy.Spider):
             
         yield item
 
-    def closed(self, reason):
+    def closed(self, reason: str) -> None:
         import json
         
         stats_file = self.settings.get("STATS_EXPORT_FILE")
-        if stats_file:
-            stats = self.crawler.stats.get_stats()
+        crawler = self.crawler
+        if stats_file and crawler and crawler.stats:
+            stats = crawler.stats.get_stats()
             # Convert any non-serializable objects (like datetime) to strings
             safe_stats = {str(k): str(v) for k, v in stats.items()}
             with open(stats_file, "w", encoding="utf-8") as f:
