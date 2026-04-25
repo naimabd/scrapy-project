@@ -90,49 +90,38 @@ class IngestionService:
             check=False
         )
 
-        # Forward every line from the spider subprocess to our logger
         if process.stdout:
-            for line in process.stdout.splitlines():
-                self.logger.info(line)
+            # 2. Forward to Dagster logger in 100-line chunks for the "Events" tab.
+            lines = process.stdout.splitlines()
+            for i in range(0, len(lines), 100):
+                self.logger.info("\n".join(lines[i : i + 100]))
 
         raw_stats: dict[str, object] = {}
-        stats_missing = False
         try:
-            with open(stats_path, encoding="utf-8") as fh:
-                raw_stats = json.load(fh)
-        except FileNotFoundError:
-            stats_missing = True
-            self.logger.error(
-                "WARNING: Scrapy stats file not found \u2014 "
-                "spider may have crashed before writing stats."
-            )
-        except json.JSONDecodeError as exc:
-            self.logger.error(f"WARNING: Could not parse Scrapy stats file: {exc}")
+            if os.path.exists(stats_path):
+                with open(stats_path, encoding="utf-8") as fh:
+                    raw_stats = json.load(fh)
+        except Exception as exc:
+            self.logger.error(f"WARNING: Could not read Scrapy stats file: {exc}")
         finally:
             try:
-                os.unlink(stats_path)
+                if os.path.exists(stats_path):
+                    os.unlink(stats_path)
             except OSError:
                 pass
 
-        if process.returncode != 0 and stats_missing:
-            self.logger.error(
-                f"ERROR: Scrapy exited with code {process.returncode} "
-                "and produced no stats."
-            )
+        if process.returncode != 0 and not raw_stats:
+            self.logger.error(f"Scrapy exited with code {process.returncode} and produced no stats.")
 
         def _safe_int(key: str) -> int:
             val = raw_stats.get(key, 0)
-            if not isinstance(val, (str, int, float, bytes, bytearray)):
-                return 0
             try:
-                return int(val)
+                return int(float(val))
             except (ValueError, TypeError):
                 return 0
 
         def _safe_float(key: str) -> float:
             val = raw_stats.get(key, 0.0)
-            if not isinstance(val, (str, int, float, bytes, bytearray)):
-                return 0.0
             try:
                 return float(val)
             except (ValueError, TypeError):

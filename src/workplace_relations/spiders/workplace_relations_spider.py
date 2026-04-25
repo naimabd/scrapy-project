@@ -48,7 +48,6 @@ class WorkplaceRelationsSpider(scrapy.Spider):
         yield scrapy.Request(
             url=url,
             callback=self.parse_search_page,
-            dont_filter=True,
         )
 
     def parse_search_page(
@@ -106,7 +105,6 @@ class WorkplaceRelationsSpider(scrapy.Spider):
             yield response.follow(
                 next_href,
                 callback=self.parse_search_page,
-                dont_filter=True,
             )
 
     def parse_detail_page(
